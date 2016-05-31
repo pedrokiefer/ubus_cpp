@@ -9,6 +9,9 @@ cc_library(
     "src/UBus.h",
     "src/json.hpp",
     ],
+  includes = [
+    "src/",
+    ],
   deps = [
     "//third_party/libubox:libubox",
     "//third_party/libubox:blobmsg_json",
