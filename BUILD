@@ -22,6 +22,21 @@ cc_library(
     ],
   linkopts = [
     "-lm",
+    "-lpthread",
+    ],
+  visibility = ["//visibility:public"],
+)
+
+cc_binary(
+  name = "main",
+  srcs = [
+    "src/main.cpp",
+    ],
+  deps = [
+    ":ubus++",
+    ],
+  copts = [
+    "--std=c++11",
     ],
   visibility = ["//visibility:public"],
 )

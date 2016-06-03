@@ -103,6 +103,7 @@ static inline void uloop_end(void)
 }
 
 int uloop_init(void);
+void uloop_inner_run(void);
 void uloop_run(void);
 void uloop_done(void);
 

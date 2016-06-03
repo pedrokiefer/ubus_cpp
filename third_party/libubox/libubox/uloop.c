@@ -443,6 +443,14 @@ static void uloop_clear_processes(void)
 		uloop_process_delete(p);
 }
 
+void uloop_inner_run(void)
+{
+  struct timeval tv;
+
+  uloop_gettime(&tv);
+  uloop_run_events(uloop_get_next_timeout(&tv));
+}
+
 void uloop_run(void)
 {
 	static int recursive_calls = 0;
