@@ -10,9 +10,13 @@
 
 UBus::UBus() :
   running { false },
+#ifdef __arm__
+  available { true },
+#else 
+  available { false },
+#endif
   signatureCallback { nullptr },
   callCallback { nullptr } {
-  // TODO Auto-generated constructor stub
 
 }
 
@@ -26,6 +30,9 @@ void UBus::runService() {
 }
 
 void UBus::Connect() {
+  if (!available) {
+     return;
+  }
   connection = std::unique_ptr<UBusConnection>(new UBusConnection);
   uloop_init();
   connection->ctx = ubus_connect(NULL);
@@ -35,6 +42,9 @@ void UBus::Connect() {
 }
 
 void UBus::Disconnect() {
+  if (!available) {
+    return;
+  }
   if (running) {
     running = false;
     service.join();
@@ -48,6 +58,9 @@ void objects_callback(struct ubus_context *ctx, struct ubus_object_data *obj, vo
 }
 
 void UBus::Objects() {
+  if (!available) {
+    return;
+  }
   ubus_lookup(connection->ctx, NULL, objects_callback, this);
 }
 
@@ -70,6 +83,9 @@ void signatures_callback(struct ubus_context *ctx, struct ubus_object_data *obj,
 }
 
 void UBus::Signature(std::string path, std::function<void(std::unique_ptr<UbusObject>)> callback) {
+  if (!available) {
+    return;
+  }
   signatureCallback = callback;
   ubus_lookup(connection->ctx, path.c_str(), signatures_callback, this);
 }
@@ -95,6 +111,9 @@ void function_call_callback(struct ubus_request *req, int type, struct blob_attr
 }
 
 void UBus::Call(std::string path, std::string function, json data, std::function<void(json)> callback) {
+  if (!available) {
+    return;
+  }
   uint32_t id;
   callCallback = callback;
 
@@ -131,6 +150,9 @@ void local_listen_timeout(struct uloop_timeout *timeout) {
 }
 
 void UBus::Listen(std::string path, std::function<void(json)> callback) {
+  if (!available) {
+    return;
+  }
   std::shared_ptr<UBusEvent> ev = std::make_shared<UBusEvent>();
   ev->event.cb = local_ubus_event_handler;
   ev->callback = callback;
