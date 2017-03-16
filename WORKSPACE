@@ -16,3 +16,10 @@ new_git_repository(
   build_file = "third_party/libubox.BUILD",
 )
 
+new_git_repository(
+  name = "org_openwrt_ubus",
+  remote = "https://git.openwrt.org/project/ubus.git",
+  commit = "34c6e818e431cc53478a0f7c7c1eca07d194d692",
+  build_file = "third_party/ubus.BUILD",
+)
+

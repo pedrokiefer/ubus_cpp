@@ -21,6 +21,7 @@ cc_library(
         "utils.h",
         "vlist.h",
     ],
+    include_prefix = "libubox",
     deps = [
         ":blobmsg_json",
         ":libubox_impl",
