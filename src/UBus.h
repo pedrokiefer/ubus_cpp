@@ -68,11 +68,7 @@ class UBus {
   };
 
   std::unique_ptr<UBusConnection> connection;
-  std::atomic_bool running;
-  std::thread service;
   bool available;
-
-  void runService();
 
  public:
 

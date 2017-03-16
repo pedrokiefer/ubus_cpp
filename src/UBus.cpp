@@ -9,7 +9,6 @@
 #include "json.h"
 
 UBus::UBus() :
-  running { false },
 #ifdef __arm__
   available { true },
 #else 
@@ -23,18 +22,11 @@ UBus::UBus() :
 UBus::~UBus() {
 }
 
-void UBus::runService() {
-  while(running) {
-    uloop_inner_run();
-  }
-}
-
 void UBus::Connect() {
   if (!available) {
      return;
   }
   connection = std::unique_ptr<UBusConnection>(new UBusConnection);
-  uloop_init();
   connection->ctx = ubus_connect(NULL);
   ubus_add_uloop(connection->ctx);
   connection->timeout = 30;
@@ -45,12 +37,7 @@ void UBus::Disconnect() {
   if (!available) {
     return;
   }
-  if (running) {
-    running = false;
-    service.join();
-  }
   ubus_free(connection->ctx);
-  uloop_end();
 }
 
 void objects_callback(struct ubus_context *ctx, struct ubus_object_data *obj, void *priv) {
@@ -141,12 +128,6 @@ void local_ubus_event_handler(struct ubus_context *ctx, struct ubus_event_handle
   if (handler != nullptr) {
     handler->callback(json);
   }
-
-}
-
-void local_listen_timeout(struct uloop_timeout *timeout) {
-  std::cout << "timeout!" << std::endl;
-  uloop_end();
 }
 
 void UBus::Listen(std::string path, std::function<void(json)> callback) {
@@ -159,12 +140,5 @@ void UBus::Listen(std::string path, std::function<void(json)> callback) {
 
   UBusEventStaticManager::addEvent(path, ev);
 
-  int ret = ubus_register_event_handler(connection->ctx, &ev->event, path.c_str());
-
-  if (!running) {
-    running = true;
-    connection->uloopTimeout.cb = local_listen_timeout;
-    uloop_timeout_set(&connection->uloopTimeout, connection->timeout * 1000);
-    service = std::thread(&UBus::runService, this);
-  }
+  ubus_register_event_handler(connection->ctx, &ev->event, path.c_str());
 }
