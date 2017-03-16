@@ -130,6 +130,7 @@ cc_library(
         ":config",
         ":json_config",
     ],
+    includes = ["."],
     copts = [
         "-std=c99",
         "-D_GNU_SOURCE",
