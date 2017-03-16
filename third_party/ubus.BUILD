@@ -30,8 +30,8 @@ cc_library(
     "ubus_common.h",
     ],
   deps = [
-    "@org_openwrt_libubox//:libubox",
-    "@com_github_json_c//:json_c",
+    "//external:libubox",
+    "//external:json_c",
     ],
   copts = [
     "--std=gnu99",
@@ -60,8 +60,8 @@ cc_binary(
     "ubusmsg.h",
     ],
   deps = [
-    "@org_openwrt_libubox//:libubox",
-    "@com_github_json_c//:json_c",
+    "//external:libubox",
+    "//external:json_c",
     ],
   copts = [
     "--std=gnu99",

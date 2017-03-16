@@ -89,7 +89,7 @@ cc_library(
     visibility = ["//visibility:public"],
     deps = [
         ":libubox_impl",
-        "@com_github_json_c//:json_c",
+        "//external:json_c",
     ],
 )
 
@@ -123,7 +123,7 @@ cc_library(
     visibility = ["//visibility:public"],
     deps = [
         ":libubox_impl",
-        "@com_github_json_c//:json_c",
+        "//external:json_c",
     ],
 )
 

@@ -13,8 +13,8 @@ cc_library(
     "src/",
     ],
   deps = [
-    "@org_openwrt_libubox//:libubox",
-    "@org_openwrt_ubus//:libubus",
+    "//external:libubox",
+    "//external:libubus",
     ],
   copts = [
     "--std=c++11",

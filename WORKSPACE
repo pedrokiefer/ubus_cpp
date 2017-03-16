@@ -9,6 +9,11 @@ new_git_repository(
   build_file = "third_party/json.BUILD",
 )
 
+bind(
+  name = "json_c",
+  actual = "@com_github_json_c//:json_c"
+)
+
 new_git_repository(
   name = "org_openwrt_libubox",
   remote = "https://git.openwrt.org/project/libubox.git",
@@ -16,10 +21,20 @@ new_git_repository(
   build_file = "third_party/libubox.BUILD",
 )
 
+bind(
+  name = "libubox",
+  actual = "@org_openwrt_libubox//:libubox",
+)
+
 new_git_repository(
   name = "org_openwrt_ubus",
   remote = "https://git.openwrt.org/project/ubus.git",
   commit = "34c6e818e431cc53478a0f7c7c1eca07d194d692",
   build_file = "third_party/ubus.BUILD",
+)
+
+bind(
+  name = "libubus",
+  actual = "@org_openwrt_ubus//:libubus",
 )
 
