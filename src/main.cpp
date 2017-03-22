@@ -42,11 +42,7 @@ int main(int argc, char *argv[]) {
   });
 
 
-  bus->Listen("network.interface", [](json data) {
-    std::cout << "Listen: " << data.dump(4) << std::endl;
-  });
-
-  bus->Listen("asdf", [&](json data) {
+  bus->Subscribe("network.interface", [&](json data) {
     std::cout << "Listen: " << data.dump(4) << std::endl;
     bus->Call("network.interface.lan", "status", json::parse("{}"), [](json data) {
       std::cout << data.dump(4) << std::endl;
@@ -54,7 +50,9 @@ int main(int argc, char *argv[]) {
   });
 
   //uloop_run();
-  std::this_thread::sleep_for(std::chrono::seconds(5));
+  //while(true) {
+    std::this_thread::sleep_for(std::chrono::seconds(15));
+  //}
 
   bus->Disconnect();
   std::cout << "Leaving..." << std::endl;

@@ -8,7 +8,27 @@
 #include <iostream>
 #include "json.h"
 
+struct local_subscriber {
+  struct ubus_subscriber subscriber;
+  int id;
+};
+
+extern void uloop_disable_signals(void);
+
+template<class P, class M>
+size_t coffsetof(const M P::*member)
+{
+    return (size_t) &( reinterpret_cast<P*>(0)->*member);
+}
+
+template<class P, class M>
+P* ccontainer_of(M* ptr, const M P::*member)
+{
+    return (P*)( (char*)ptr - coffsetof(member));
+}
+
 UBus::UBus() :
+  threadRunning { false },
 #ifdef __arm__
   available { true },
 #else 
@@ -16,10 +36,11 @@ UBus::UBus() :
 #endif
   signatureCallback { nullptr },
   callCallback { nullptr } {
-
+  uloop_init();
 }
 
 UBus::~UBus() {
+  StopUloopThread();
 }
 
 void UBus::Connect() {
@@ -37,6 +58,7 @@ void UBus::Disconnect() {
   if (!available) {
     return;
   }
+  StopUloopThread();
   ubus_free(connection->ctx);
 }
 
@@ -116,29 +138,84 @@ void UBus::Call(std::string path, std::string function, json data, std::function
   ubus_invoke(connection->ctx, id, function.c_str(), connection->buf.head, function_call_callback, this, connection->timeout * 1000);
 }
 
-void local_ubus_event_handler(struct ubus_context *ctx, struct ubus_event_handler *ev,
-      const char *type, struct blob_attr *msg) {
+int local_ubus_event_handler(struct ubus_context *ctx, struct ubus_object *obj,
+            struct ubus_request_data *req, const char *method,
+            struct blob_attr *msg) {
 
-  std::cout << "Got type:" << type << std::endl;
+  struct ubus_subscriber *s;
+  struct local_subscriber *sub;
+
+  s = ccontainer_of(obj, &ubus_subscriber::obj);
+  sub = ccontainer_of(s, &local_subscriber::subscriber);
+
+  std::cout << "Got method:" << method << " id: " << sub->id << std::endl;
   char *blob = blobmsg_format_json(msg, true);
   auto json = json::parse(blob);
+  std::cout << json.dump(4) << std::endl;
   free(blob);
 
-  auto handler = UBusEventStaticManager::getEventHandler(type);
+  auto handler = UBusCallbackStaticManager::getCallbackHandler(sub->id);
   if (handler != nullptr) {
     handler->callback(json);
   }
+  return 0;
 }
 
-void UBus::Listen(std::string path, std::function<void(json)> callback) {
-  if (!available) {
+void UBus::Subscribe(std::string path, std::function<void(json)> callback) {
+  uint32_t id = 0;
+  int status;
+  if (( status = ubus_lookup_id(connection->ctx, path.c_str(), &id )) ) {
+    std::cout << "Unable to find: " << path << std::endl;
     return;
   }
-  std::shared_ptr<UBusEvent> ev = std::make_shared<UBusEvent>();
-  ev->event.cb = local_ubus_event_handler;
-  ev->callback = callback;
 
-  UBusEventStaticManager::addEvent(path, ev);
+  auto callbackHandler = std::make_shared<UBusCallback>();
+  callbackHandler->callback = callback;
+  UBusCallbackStaticManager::addCallbackHandler(id, callbackHandler);
+  std::cout << path << " -> Id: " << id << std::endl;
 
-  ubus_register_event_handler(connection->ctx, &ev->event, path.c_str());
+  struct local_subscriber *s;
+
+  s = static_cast<struct local_subscriber *>(malloc(sizeof(struct local_subscriber)));
+  if (s == nullptr) {
+    std::cout << "Unable to allocate memory" << std::endl;
+    return;
+  }
+  memset(s, 0, sizeof(struct local_subscriber));
+
+  s->subscriber.cb = local_ubus_event_handler;
+  s->id = id;
+
+  if ((status = ubus_register_subscriber(connection->ctx, &s->subscriber))) {
+    std::cout << "Failed to register subscriber" << std::endl;
+    return;
+  }
+
+  if ((status = ubus_subscribe(connection->ctx, &s->subscriber, id))) { 
+    std::cout << "Failed to subscribe" << std::endl;
+    return;
+  }
+
+  if (!threadRunning) {
+    StartUloopThread();
+  }
+
+}
+
+void UBus::StartUloopThread() {
+  std::cout << "start thread" << std::endl;
+  uloopThread = std::thread([&]() {
+    threadRunning = true;
+    uloop_disable_signals();
+    uloop_run();
+    uloop_done();
+    threadRunning = false;
+  });
+}
+
+void UBus::StopUloopThread() {
+  uloop_end();
+  if (uloopThread.joinable()) {
+    uloopThread.join();
+  }
 }

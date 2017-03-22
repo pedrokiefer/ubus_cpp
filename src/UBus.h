@@ -27,32 +27,31 @@ struct UbusObject {
   json signature;
 };
 
-struct UBusEvent {
-  struct ubus_event_handler event;
+struct UBusCallback {
   std::function<void(json)> callback;
 };
 
-class UBusEventStaticManager {
+class UBusCallbackStaticManager {
  private:
-  static std::map<std::string, std::shared_ptr<UBusEvent>> & GetEventsMap() {
-    static std::map<std::string, std::shared_ptr<UBusEvent>> events;
+  static std::map<int, std::shared_ptr<UBusCallback>> & GetEventsMap() {
+    static std::map<int, std::shared_ptr<UBusCallback>> events;
     return events;
   }
  public:
-  UBusEventStaticManager();
-  virtual ~UBusEventStaticManager() {};
+  UBusCallbackStaticManager();
+  virtual ~UBusCallbackStaticManager() = default;
 
-  static void addEvent(std::string name, std::shared_ptr<UBusEvent> handler) {
-    if (GetEventsMap().count(name) != 0) {
+  static void addCallbackHandler(int id, std::shared_ptr<UBusCallback> handler) {
+    if (GetEventsMap().count(id) != 0) {
       return;
     }
 
-    GetEventsMap()[name] = handler;
+    GetEventsMap()[id] = handler;
   }
 
-  static std::shared_ptr<UBusEvent> getEventHandler(std::string name) {
-    if (GetEventsMap().count(name) == 1) {
-      return GetEventsMap()[name];
+  static std::shared_ptr<UBusCallback> getCallbackHandler(int id) {
+    if (GetEventsMap().count(id) == 1) {
+      return GetEventsMap()[id];
     }
     return nullptr;
   }
@@ -67,9 +66,14 @@ class UBus {
     struct uloop_timeout uloopTimeout;
   };
 
+  std::thread uloopThread;
+  bool threadRunning;
   std::unique_ptr<UBusConnection> connection;
   bool available;
 
+ protected:
+  void StartUloopThread();
+  void StopUloopThread();
  public:
 
   std::function<void(std::unique_ptr<UbusObject>)> signatureCallback;
@@ -83,7 +87,7 @@ class UBus {
   void Objects();
   void Signature(std::string path, std::function<void(std::unique_ptr<UbusObject>)> callback);
   void Call(std::string path, std::string function, json data, std::function<void(json)> callback);
-  void Listen(std::string path, std::function<void(json)> callback);
+  void Subscribe(std::string path, std::function<void(json)> callback);
 
 };
 
