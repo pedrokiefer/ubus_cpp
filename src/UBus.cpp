@@ -110,6 +110,7 @@ void function_call_callback(struct ubus_request *req, int type, struct blob_attr
   }
 
   char *blob = blobmsg_format_json(msg, true);
+  std::cout << "blob is:["<< blob <<"]" << std::endl;
   json data;
   if (blob == nullptr) {
     data = json::parse("{}");
