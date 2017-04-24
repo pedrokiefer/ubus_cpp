@@ -110,7 +110,12 @@ void function_call_callback(struct ubus_request *req, int type, struct blob_attr
   }
 
   char *blob = blobmsg_format_json(msg, true);
-  auto json = json::parse(blob);
+  json data;
+  if (blob == nullptr) {
+    data = json::parse("{}");
+  } else {
+    data = json::parse(blob);
+  }
   free(blob);
 
   if (ubus->callCallback != nullptr) {
@@ -150,13 +155,18 @@ int local_ubus_event_handler(struct ubus_context *ctx, struct ubus_object *obj,
 
   std::cout << "Got method:" << method << " id: " << sub->id << std::endl;
   char *blob = blobmsg_format_json(msg, true);
-  auto json = json::parse(blob);
+  json data;
+  if (blob == nullptr) {
+    data = json::parse("{}");
+  } else {
+    data = json::parse(blob);
+  }
   std::cout << json.dump(4) << std::endl;
   free(blob);
 
   auto handler = UBusCallbackStaticManager::getCallbackHandler(sub->id);
   if (handler != nullptr) {
-    handler->callback(json);
+    handler->callback(data);
   }
   return 0;
 }
@@ -219,3 +229,4 @@ void UBus::StopUloopThread() {
     uloopThread.join();
   }
 }
+
