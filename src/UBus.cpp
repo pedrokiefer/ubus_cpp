@@ -119,7 +119,7 @@ void function_call_callback(struct ubus_request *req, int type, struct blob_attr
   free(blob);
 
   if (ubus->callCallback != nullptr) {
-    ubus->callCallback(json);
+    ubus->callCallback(data);
     ubus->callCallback = nullptr;
   }
 }
@@ -161,7 +161,7 @@ int local_ubus_event_handler(struct ubus_context *ctx, struct ubus_object *obj,
   } else {
     data = json::parse(blob);
   }
-  std::cout << json.dump(4) << std::endl;
+  std::cout << data.dump(4) << std::endl;
   free(blob);
 
   auto handler = UBusCallbackStaticManager::getCallbackHandler(sub->id);
